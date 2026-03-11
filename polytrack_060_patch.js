@@ -481,11 +481,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const frames = safePositiveInt(entry?.time?.numberOfFrames || entry?.frames || entry?.raceTimeFrames || derivedFrames || 1, 1);
       const userId = String(entry?.userId || entry?.accountId || entry?.id || `user-${rank}`);
       const recordingId = buildRecordingId(entry, rank);
+      const safeName = String(entry?.nickname || entry?.name || getLastKnownName(userId) || 'Guest').slice(0, 24);
       return {
         id: Number.isSafeInteger(Number(entry?.id)) ? Number(entry.id) : recordingId,
         userId,
         accountId: userId,
-        name: String(entry?.name || getLastKnownName(userId) || 'Guest').slice(0, 24),
+        name: safeName,
+        nickname: safeName,
+        Nickname: safeName,
         carColors: normalizeCarColorId(entry?.carColors || 'ffffff8ec7ff28346a212b58'),
         carColorId: normalizeCarColorId(entry?.carColorId || entry?.carColors || 'ffffff8ec7ff28346a212b58'),
         carId: extractCarId(entry),
@@ -663,15 +666,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     style.id = 'polytrack-ext-style';
     style.textContent = `
       #overallLeaderboardPanel{display:none;position:fixed;inset:0;z-index:10001;background:rgba(13,17,37,.96);backdrop-filter: blur(4px);padding:18px;overflow-y:auto;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
-      .overall-shell{max-width:1320px;max-height:min(92vh,1080px);overflow-y:auto;margin:0 auto;background:linear-gradient(180deg,var(--surface-color,#28346a),var(--surface-secondary-color,#212b58));border:2px solid rgba(255,255,255,.16);box-shadow:0 12px 36px rgba(0,0,0,.45)}
-      .overall-top{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:2px solid rgba(255,255,255,.14)}
-      .overall-top h2{margin:0;font-size:44px;font-weight:normal;color:#8ec7ff;letter-spacing:.6px}
-      .overall-sub{margin:0;padding:0 24px 16px;color:rgba(255,255,255,.86);font-size:24px;line-height:1.35}
+      .overall-shell{max-width:1480px;max-height:min(94vh,1200px);overflow-y:auto;margin:0 auto;background:radial-gradient(circle at top,rgba(94,225,255,.16),transparent 26%),linear-gradient(180deg,#243368 0%,#1a2348 58%,#131a34 100%);border:2px solid rgba(133,211,255,.2);box-shadow:0 20px 70px rgba(0,0,0,.5);position:relative}
+      .overall-top{display:flex;justify-content:space-between;align-items:center;padding:26px 30px 18px;border-bottom:2px solid rgba(255,255,255,.12);position:sticky;top:0;background:linear-gradient(180deg,rgba(14,20,44,.95),rgba(14,20,44,.76));backdrop-filter:blur(6px);z-index:2}
+      .overall-top h2{margin:0;font-size:52px;font-weight:normal;color:#9fdfff;letter-spacing:1px;text-shadow:0 0 18px rgba(94,225,255,.28)}
+      .overall-sub{margin:0;padding:0 30px 20px;color:rgba(240,248,255,.88);font-size:26px;line-height:1.42}
       #closeOverallLeaderboard,#overallHelpBtn{cursor:pointer;transition:transform .12s ease, filter .12s ease, box-shadow .12s ease}
       #closeOverallLeaderboard:hover,#overallHelpBtn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 0 12px rgba(142,199,255,.25)}
       .overall-action-btn{min-width:110px;font-size:20px;line-height:34px}
       .overall-action-btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
-      #overallLeaderboardList{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+      #overallLeaderboardList{padding:0 18px 20px;display:flex;flex-direction:column;gap:12px}
       #overallHelpPopup{display:none;position:absolute;inset:0;background:rgba(9,13,30,.78);backdrop-filter:blur(2px);align-items:center;justify-content:center;z-index:3}
       .overall-help-card{max-width:920px;background:linear-gradient(180deg,#24305f,#1a244b);border:1px solid rgba(255,255,255,.2);padding:24px 26px;box-shadow:0 12px 28px rgba(0,0,0,.4)}
       .overall-help-card h3{margin:0 0 12px;font-size:40px;color:#9ed5ff;font-weight:normal}
@@ -679,25 +682,32 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-help-card .small{font-size:18px;color:rgba(255,255,255,.74)}
       .overall-help-actions{display:flex;justify-content:flex-end;margin-top:8px}
       #overallHelpClose{cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;padding:8px 14px;font-size:18px}
-      .overall-entry{display:grid;grid-template-columns:96px minmax(280px,1.45fr) minmax(210px,1fr) minmax(260px,1fr);gap:10px;align-items:center;padding:14px;background:var(--surface-tertiary-color,#192042);border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(8px);animation:overallEntryIn .26s ease forwards}
-      .overall-entry.top-1{border-color:rgba(255,231,128,.95);background:linear-gradient(90deg,rgba(255,231,128,.35),rgba(70,56,18,.42));transform-origin:center;box-shadow:0 0 0 1px rgba(255,233,160,.45),0 8px 20px rgba(0,0,0,.25)}
-      .overall-entry.top-2{border-color:rgba(205,221,255,.9);background:linear-gradient(90deg,rgba(205,221,255,.22),rgba(45,56,88,.35))}
-      .overall-entry.top-3{border-color:rgba(255,191,120,.9);background:linear-gradient(90deg,rgba(255,191,120,.2),rgba(78,46,22,.32))}
-      .overall-rank{width:88px;text-align:center;font-size:30px;color:#82beff}
-      .overall-entry.top-1 .overall-rank{font-size:36px;color:#ffeeb0}
-      .overall-car-model{width:98px;height:44px;border-radius:8px;display:inline-flex;align-items:flex-end;justify-content:center;margin-right:10px;border:1px solid rgba(255,255,255,.3);vertical-align:middle;box-shadow:inset 0 0 14px rgba(0,0,0,.35);overflow:hidden;position:relative;background:rgba(4,9,22,.45)}
-      .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .14s ease}
-      .overall-car-model > img.show{opacity:1}
-      .overall-name{font-size:28px;padding:0 10px;white-space:normal;overflow-wrap:anywhere;display:flex;align-items:center}
-      .overall-mid{min-width:210px;text-align:center}
-      .overall-move{font-size:22px;font-weight:bold}
+      .overall-entry{display:grid;grid-template-columns:112px minmax(420px,1.8fr) minmax(240px,1fr) minmax(250px,.95fr);gap:16px;align-items:center;padding:18px 20px;background:linear-gradient(180deg,rgba(29,39,79,.92),rgba(18,25,52,.92));border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(10px);animation:overallEntryIn .28s cubic-bezier(.2,.7,.2,1) forwards;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+      .overall-entry.top-1{border-color:rgba(255,231,128,.95);background:linear-gradient(90deg,rgba(255,231,128,.22),rgba(60,47,14,.38));box-shadow:0 0 0 1px rgba(255,233,160,.35),0 14px 34px rgba(0,0,0,.28)}
+      .overall-entry.top-2{border-color:rgba(205,221,255,.9);background:linear-gradient(90deg,rgba(205,221,255,.15),rgba(32,43,76,.34))}
+      .overall-entry.top-3{border-color:rgba(255,191,120,.88);background:linear-gradient(90deg,rgba(255,191,120,.14),rgba(68,41,19,.32))}
+      .overall-rank{width:96px;text-align:center;font-size:34px;color:#82beff;letter-spacing:.8px}
+      .overall-entry.top-1 .overall-rank{font-size:42px;color:#ffeeb0}
+      .overall-car-model{width:132px;height:72px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-right:14px;border:1px solid rgba(255,255,255,.24);vertical-align:middle;box-shadow:inset 0 0 20px rgba(0,0,0,.28),0 6px 14px rgba(0,0,0,.18);overflow:hidden;position:relative;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.16),rgba(72,103,145,.1) 40%,rgba(5,10,24,.74) 100%)}
+      .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center 52%;opacity:0;transition:opacity .16s ease, transform .16s ease;transform:scale(.96)}
+      .overall-car-model > img.show{opacity:1;transform:scale(1)}
+      .overall-name{font-size:32px;padding:0 4px;white-space:normal;overflow-wrap:anywhere;display:flex;align-items:center;min-width:0}
+      .overall-mid{min-width:220px;text-align:center;display:flex;flex-direction:column;gap:6px}
+      .overall-move{font-size:24px;font-weight:bold}
       .overall-move.up{color:#7CFF8A}
       .overall-move.down{color:#FF7C7C}
       .overall-move.flat{color:#A8A8A8}
-      .overall-best{font-size:15px;color:rgba(210,230,255,.82)}
+      .overall-best{font-size:16px;color:rgba(218,233,255,.84);line-height:1.25}
       .overall-stats{text-align:right;min-width:250px}
-      .overall-score{font-size:32px;color:#6fe1ff}
-      .overall-races{font-size:17px;color:rgba(255,255,255,.78)}
+      .overall-score{font-size:38px;color:#7be7ff;text-shadow:0 0 16px rgba(94,225,255,.22)}
+      .overall-races{font-size:18px;color:rgba(255,255,255,.8)}
+      .overall-shell::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 22%,transparent 78%,rgba(94,225,255,.08));mix-blend-mode:screen;opacity:.65}
+      .overall-car-model::after{content:'';position:absolute;left:12px;right:12px;bottom:7px;height:12px;border-radius:50%;background:radial-gradient(circle,rgba(94,225,255,.28),rgba(0,0,0,0) 72%);pointer-events:none}
+      .overall-name-label{display:flex;flex-direction:column;gap:4px;min-width:0}
+      .overall-name-main{line-height:1.05}
+      .overall-name-hint{font-size:15px;color:rgba(226,239,255,.8);text-transform:uppercase;letter-spacing:.9px}
+      @media (max-width: 1100px){.overall-entry{grid-template-columns:100px minmax(320px,1.5fr) minmax(180px,.9fr) minmax(180px,.8fr)} .overall-car-model{width:118px;height:66px} .overall-name{font-size:28px} .overall-score{font-size:32px}}
+      @media (max-width: 820px){.overall-top{padding:20px 18px 14px}.overall-top h2{font-size:40px}.overall-sub{padding:0 18px 16px;font-size:21px}.overall-entry{grid-template-columns:84px 1fr;grid-template-areas:'rank name' 'mid mid' 'stats stats';padding:16px}.overall-rank{grid-area:rank;width:auto;font-size:28px}.overall-name{grid-area:name;font-size:24px}.overall-mid{grid-area:mid;text-align:left;padding-left:98px}.overall-stats{grid-area:stats;text-align:left;padding-left:98px}.overall-car-model{width:104px;height:60px}}
       .staticFunPill{animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
       .staticFunHover:hover{transform:translateY(-2px) scale(1.05);filter:brightness(1.18);box-shadow:0 0 18px rgba(255,255,255,0.20),0 0 30px rgba(0,255,255,0.18)}
       .staticFunText{display:inline-block;white-space:nowrap;perspective:600px;animation:staticFloat 2.2s ease-in-out infinite}
@@ -1089,14 +1099,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const score = Number(row?.score || 1.000001) || 1.000001;
     const races = Number(row?.raceCount || 0) || 0;
     const totalTracks = Number(row?.totalTracks || TOTAL_TRACKS) || TOTAL_TRACKS;
-    const safeName = escapeHtml(row?.name || 'Guest');
+    const safeName = escapeHtml(row?.nickname || row?.name || 'Guest');
     const safeColorId = normalizeCarColorId(row?.carColorId || row?.carColors || '');
     const safeCarId = cleanCarId(row?.carId || '');
     const safeUserId = cleanUserId(row?.userId || row?.accountId || '');
     const best = bestTrackMarkup(row);
     const move = movementMarkup(row?.movement || 0);
     const extra = showTopHint ? '<div style="font-size:13px;color:rgba(225,225,225,.9);margin-top:2px;">This could be you</div>' : '';
-    const styleToken = safeCarId || ('u.' + safeUserId); return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" data-carcolorid="${safeColorId}" style="animation-delay:${(index*0.04).toFixed(2)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(safeColorId, styleToken, safeUserId)}${safeName}${extra}</span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(3)}</div><div class="overall-races">${races}/${totalTracks} tracks</div></div></div>`;
+    const hintText = extra ? escapeHtml(String(extra).replace(/<[^>]+>/g,'').trim()) : '';
+    const styleToken = safeCarId || ('u.' + safeUserId); return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" data-carcolorid="${safeColorId}" style="animation-delay:${(index*0.04).toFixed(2)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(safeColorId, styleToken, safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}</span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(3)}</div><div class="overall-races">${races}/${totalTracks} tracks</div></div></div>`;
   }
 
   function renderEntries(entries){
@@ -1205,7 +1216,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function shouldMock(urlObj){
     if (!urlObj) return false;
     const path = urlObj.pathname;
-    const isLegacyPath = path === '/user' || path === '/leaderboard' || path === '/recordings' || path === '/v6/user' || path === '/v6/leaderboard' || path === '/v6/recordings';
+    const isLegacyPath = path === '/user' || path === '/leaderboard' || path === '/leaderboardUserEntry' || path === '/recordings' || path === '/v6/user' || path === '/v6/leaderboard' || path === '/v6/leaderboardUserEntry' || path === '/v6/recordings';
     if (!isLegacyPath) return false;
     const host = String(urlObj.host || '').toLowerCase();
     if (host === window.location.host.toLowerCase()) return true;
@@ -1269,6 +1280,36 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       }
       return makeUserPayload();
     }
+    if (urlObj.pathname === '/leaderboardUserEntry' || urlObj.pathname === '/v6/leaderboardUserEntry') {
+      const hinted = parsePayload(body) || {};
+      const trackId = String(urlObj.searchParams.get('trackId') || hinted.trackId || '').slice(0,80);
+      if (!trackId) return { id:null, position:1, oldPosition:1, newPosition:1, frames:1, name:'Guest', nickname:'Guest', userId:guestAccountId, accountId:guestAccountId, verifiedState:0, time:{ numberOfFrames:1 } };
+      const accountId = resolveProfileAccountId(hinted, String(urlObj.searchParams.get('userTokenHash') || hinted.userTokenHash || hinted.userId || hinted.accountId || localStorage.getItem('polytrack-0.6.0-active-account-id') || guestAccountId));
+      const fullEntries = await getTrackEntries(trackId, 100).catch(()=>[]);
+      const mine = fullEntries.find((e)=>String(e.accountId||e.userId||'')===String(accountId||'')) || null;
+      const fallbackPos = Math.max(1, fullEntries.length + 1);
+      const position = mine ? safePositiveInt(mine.rank || mine.position || fallbackPos, fallbackPos) : fallbackPos;
+      const safeName = sanitizeDisplayName(mine?.nickname || mine?.name || getLastKnownName(accountId) || localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest');
+      const frames = safePositiveInt(mine?.frames || mine?.raceTimeFrames || mine?.time?.numberOfFrames || 1, 1);
+      return {
+        id: safeRecordingId(mine?.id || mine?.uploadId) || null,
+        userId: accountId,
+        accountId,
+        name: safeName,
+        nickname: safeName,
+        Nickname: safeName,
+        position,
+        Position: position,
+        oldPosition: position,
+        OldPosition: position,
+        newPosition: position,
+        NewPosition: position,
+        frames,
+        verifiedState: Number.isFinite(Number(mine?.verifiedState)) ? Number(mine.verifiedState) : 0,
+        time: { numberOfFrames: frames }
+      };
+    }
+
     if (urlObj.pathname === '/leaderboard' || urlObj.pathname === '/v6/leaderboard') {
       const hinted = parsePayload(body) || {};
       const trackId = String(urlObj.searchParams.get('trackId') || hinted.trackId || '').slice(0,80);
@@ -1301,12 +1342,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const frames = safePositiveInt(payload.frames || payload.numberOfFrames || payload.raceTimeFrames || 1, 1);
         const recColors = String(payload.carColors || payload.CarColors || localStorage.getItem(LAST_ACTIVE_COLORS_KEY) || '').slice(0,64) || null;
         const recCarId = cleanCarId(payload.carId || payload.car || payload.carName || localStorage.getItem(LAST_ACTIVE_CAR_ID_KEY) || '') || null;
-        writeRecordingStore(recId, { recording: recData, frames, verifiedState: Number(payload.verifiedState||0)||0, carColors: recColors || undefined, carId: recCarId || undefined });
-        log('info','[FB211] recordings POST normalized',{recordingId:recId,frames,bytes:recData.length,carColors:recColors,carId:recCarId});
+        const recCarStyle = String(payload.carStyle || payload.car_style || localStorage.getItem('polytrack-0.6.0-last-active-car-style') || '') || null;
+        writeRecordingStore(recId, { recording: recData, frames, verifiedState: Number(payload.verifiedState||0)||0, carColors: recColors || undefined, carId: recCarId || undefined, carStyle: recCarStyle || undefined });
+        log('info','[FB211] recordings POST normalized',{recordingId:recId,frames,bytes:recData.length,carColors:recColors,carId:recCarId,carStyle:recCarStyle});
         try {
           const d = await db();
           const q = await d.collection(COLLECTIONS.raceResults).where('uploadId','==',recId).limit(10).get();
-          await Promise.all((q.docs||[]).map((doc)=>doc.ref.set({ replay: recData, raceTimeFrames: frames, carColors: recColors || doc.data()?.carColors || null, carId: recCarId || doc.data()?.carId || null }, { merge:true })));
+          await Promise.all((q.docs||[]).map((doc)=>doc.ref.set({ replay: recData, raceTimeFrames: frames, carColors: recColors || doc.data()?.carColors || null, carId: recCarId || doc.data()?.carId || null, carStyle: recCarStyle || doc.data()?.carStyle || null }, { merge:true })));
           log('info','[FB212] recordings POST upserted',{recordingId:recId,matched:(q.docs||[]).length});
         } catch (error) {
           log('warn','[FB412] recordings POST firestore upsert failed', String(error && (error.message || error)));
@@ -1431,6 +1473,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         replayHash: replaySig || null,
         carId,
         carColors,
+        carStyle,
         raceTimeFrames: frames,
         uploadId,
         verified: Boolean(payload.isVerified ?? payload.verified ?? false),
@@ -1443,6 +1486,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         name,
         carId,
         carColors,
+        carStyle,
         updatedAt: createdAt
       }, { merge: true });
       try {
@@ -1522,7 +1566,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       this.__extUrl = String(url || '');
       this.__extUrlObj = parseTarget(this.__extUrl);
       this.__extMock = shouldMock(this.__extUrlObj);
-      this.__extMockDynamic = this.__extMock && (this.__extUrlObj?.pathname === '/user' || this.__extUrlObj?.pathname === '/leaderboard' || this.__extUrlObj?.pathname === '/recordings' || this.__extUrlObj?.pathname === '/v6/user' || this.__extUrlObj?.pathname === '/v6/leaderboard' || this.__extUrlObj?.pathname === '/v6/recordings');
+      this.__extMockDynamic = this.__extMock && (this.__extUrlObj?.pathname === '/user' || this.__extUrlObj?.pathname === '/leaderboard' || this.__extUrlObj?.pathname === '/leaderboardUserEntry' || this.__extUrlObj?.pathname === '/recordings' || this.__extUrlObj?.pathname === '/v6/user' || this.__extUrlObj?.pathname === '/v6/leaderboard' || this.__extUrlObj?.pathname === '/v6/leaderboardUserEntry' || this.__extUrlObj?.pathname === '/v6/recordings');
       if (this.__extMock && !this.__extMockDynamic) {
         const payload = JSON.stringify(makeUserPayload());
         this.__extBlobUrl = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));

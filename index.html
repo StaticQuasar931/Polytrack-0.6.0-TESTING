@@ -205,6 +205,46 @@
       <h1>PolyTrack Version 0.6.0</h1>
       <p>Top-left Static Menu and bottom-right rotating widget by StaticQuasar931. Unblocked games, school safe games, StaticQuasar931, staticquasar931, static 931, staticq, staticq931.</p>
     </div>
+    <script>
+      (function(){
+        const MENU_KEY = 'sq931_staticMenu_hidden_until';
+        const menu = document.getElementById('staticMenu');
+        const slide = document.getElementById('staticSlideMenu');
+        if (!menu || !slide) return;
+
+        function isVisible(el){
+          if (!el) return false;
+          const style = getComputedStyle(el);
+          if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') < 0.05) return false;
+          const rect = el.getBoundingClientRect();
+          return rect.width > 20 && rect.height > 20;
+        }
+
+        function inLobby(){
+          const menuRoot = document.querySelector('.menu');
+          const mainButtons = document.querySelector('.menu .main-buttons-container, .menu .buttons, .menu .main-buttons');
+          return isVisible(menuRoot) && (!mainButtons || isVisible(mainButtons));
+        }
+
+        function staticMenuAllowed(){
+          const until = parseInt(localStorage.getItem(MENU_KEY) || '0', 10);
+          return !until || Date.now() >= until;
+        }
+
+        function syncLobbyWidgets(){
+          const lobby = inLobby();
+          menu.style.display = lobby && staticMenuAllowed() ? 'flex' : 'none';
+          slide.style.display = lobby ? 'block' : 'none';
+          if (!lobby) slide.style.pointerEvents = 'none';
+        }
+
+        syncLobbyWidgets();
+        setInterval(syncLobbyWidgets, 250);
+        const observer = new MutationObserver(syncLobbyWidgets);
+        observer.observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:['class','style'] });
+        window.addEventListener('focus', syncLobbyWidgets);
+      })();
+    </script>
   </body>
 </html>
 
